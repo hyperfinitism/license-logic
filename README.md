@@ -12,7 +12,7 @@ It parses [SPDX-style](https://spdx.github.io/spdx-spec/v3.0.1/annexes/spdx-lice
 - **Equivalence checking** — are two expressions logically equivalent?
 - **Implication checking** — does one expression logically imply another?
 
-These operations are powered by a SAT solver ([PySAT](https://pysathq.github.io/)) via Tseitin encoding.
+These operations are powered by a SAT solver ([PySAT](https://pysathq.github.io/)) via Tseitin encoding. In effect, `license-logic` also works as a **CLI wrapper around PySAT** — you feed it readable Boolean expressions instead of raw DIMACS clauses, and it handles tokenisation, parsing, Tseitin encoding, and solver invocation behind the scenes.
 
 ## Installation
 
@@ -24,7 +24,7 @@ pip install git+https://github.com/hyperfinitism/license-logic
 
 ### CLI
 
-```
+```sh
 # Pretty-print a parsed expression
 license-logic parse "MIT OR (Apache-2.0 AND BSD-3-Clause)"
 
@@ -94,13 +94,13 @@ Even without built-in semantic rules, you can **encode domain knowledge yourself
 
 Suppose you maintain a list of known pairwise-incompatible licenses:
 
-- Apache-2.0 vs. GPL-2.0-only
-- CC-BY-NC-SA-4.0 vs. GPL-3.0-only
-- …
+- `Apache-2.0` vs. `GPL-2.0-only`
+- `CC-BY-NC-SA-4.0` vs. `GPL-3.0-only`
+- ...
 
 Each conflict means "these two licenses cannot be chosen together." Represent the full set of conflicts as a **DNF** — a disjunction of conjunctions, where each conjunction is one forbidden pair:
 
-```
+```plaintext
 (Apache-2.0 AND GPL-2.0-only) OR (CC-BY-NC-SA-4.0 AND GPL-3.0-only) OR ...
 ```
 
@@ -110,7 +110,7 @@ Now, given a composite license expression **L** that you want to check, ask:
 
 > Does **L** imply **C**?
 
-```
+```sh
 license-logic implies "<L>" "<C>"
 ```
 
