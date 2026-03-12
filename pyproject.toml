@@ -1,0 +1,47 @@
+[project]
+name = "license-logic"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+  "python-sat>=1.8.dev30",
+]
+
+[project.scripts]
+license-logic = "license_logic.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.29"]
+build-backend = "hatchling.build"
+
+# Development purposes only
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.0.2",
+  "ruff>=0.15.5",
+  "mypy>=1.19.1",
+]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "B", # flake8-bugbear
+    "E", # pycodestyle Error
+    "F", # Pyflakes
+    "I", # isort
+    "PL", # Pylint
+    "SIM", # flake8-simplify
+    "TC", # flake8-type-checking
+    "W" # pycodestyle Warning
+]
+ignore = [
+    "PLR0911", # too-many-return-statements
+    "TC001" # typing-only-first-party-import
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
