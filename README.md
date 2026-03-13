@@ -4,7 +4,7 @@
 ![MSPV](https://img.shields.io/badge/python-3.11+-orange.svg)
 [![License](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 
-A propositional-logic toolkit for reasoning about composite license expressions.
+`license-logic` is a propositional-logic toolkit for reasoning about composite license expressions.
 
 It parses [SPDX-style](https://spdx.github.io/spdx-spec/v3.0.1/annexes/spdx-license-expressions/) compound license expressions (`AND`, `OR`, `WITH` and non-standard `NOT`) into a formula AST and provides:
 
@@ -63,7 +63,7 @@ implies("A AND B", "A")                        # True
 
 ## What this tool does
 
-Every atomic license identifier (e.g. `MIT`, `Apache-2.0`, `GPL-3.0-only`, `BSD-3-Clause WITH LLVM-exception`) is treated as a **propositional variable** — an opaque symbol with no built-in meaning. The connectives `AND`, `OR`, and `NOT` are the standard Boolean (classical logic) operators.
+Every atomic license identifier (e.g. `Apache-2.0 WITH LLVM-exception`, `BSD-3-Clause`, `MIT`) is treated as a **propositional variable** — an opaque symbol with no built-in meaning. The connectives `AND`, `OR`, and `NOT` are the standard Boolean (classical logic) operators.
 
 Given that abstraction the tool can answer purely **structural / logical** questions about composite license expressions:
 
@@ -134,3 +134,58 @@ license-logic implies "Apache-2.0 AND MIT" "$CONFLICTS"
 ```
 
 The same technique generalises to any domain rule that can be expressed as a propositional formula: subsumption rules, licence-family inclusions, policy constraints, and so on. Encode the rule as a formula and use `equiv` or `implies` to query it.
+
+## Discrepancy: logical equivalence ≠ licensing equivalence
+
+The transformations provided by this toolkit are **logically** correct but not necessarily **legally** correct. A compound license expression uses `AND` and `OR` as syntactic conventions with domain-specific meaning that does not always coincide with their purely logical semantics.
+
+### Concrete example: `aws-lc-sys`
+
+The Rust crate [`aws-lc-sys` v0.38.0](https://crates.io/crates/aws-lc-sys) declares its license as:
+
+```
+ISC AND (Apache-2.0 OR ISC) AND OpenSSL
+```
+
+This expression reflects the crate's layered provenance:
+
+| Component | License | Reason |
+| --------- | ------- | ------ |
+| **aws-lc-sys** | `Apache-2.0 OR ISC` | AWS's fork of BoringSSL. AWS-LC's own additions are dual-licensed under Apache-2.0 or ISC, at the user's choice. |
+| **BoringSSL** | `ISC` | Google's fork of OpenSSL. BoringSSL's own additions are licensed under ISC. |
+| **OpenSSL** | `OpenSSL` | The OpenSSL code is licensed under the OpenSSL license. |
+
+The `AND` connective in the SPDX expression means "you must satisfy **all** of these simultaneously" — each clause governs a different portion of the codebase.
+
+#### A note on versions
+
+This example is based on `aws-lc-sys` v0.38.0 and its dependencies at that time. Note that the licenses of these components have changed in newer versions: both OpenSSL (since v3.x) and BoringSSL have since switched to `Apache-2.0`.
+
+### Why simplification is wrong here
+
+In classical logic (or Boolean algebra), the expression `ISC AND (Apache-2.0 OR ISC)` is equivalent to `ISC`. This library will therefore report:
+
+```sh
+license-logic equiv "ISC AND (Apache-2.0 OR ISC) AND OpenSSL" "ISC AND OpenSSL"
+# => true
+```
+
+Logically this is correct. But from a **licensing** perspective the two expressions carry different information:
+
+- **Original:** "The BoringSSL portion is ISC; the aws-lc-sys portion is Apache-2.0 **or** ISC (your choice); the OpenSSL portion is OpenSSL."
+  This gives you **two** options:
+  1. BoringSSL under ISC, aws-lc-sys under **Apache-2.0**, OpenSSL under OpenSSL
+  2. BoringSSL under ISC, aws-lc-sys under **ISC**, OpenSSL under OpenSSL
+
+- **Simplified:** "Everything (except OpenSSL) is ISC."
+  This describes only **one** option, losing the fact that you may choose Apache-2.0 for the aws-lc-sys-specific code.
+
+The simplification is **lossy** because `AND` in an SPDX compound expression does not mean that a single, combined license applies to the entire work. Each `AND`-clause is scoped to a different subset of the code, and the **identity of which clause covers which part** is meaningful — even when, from a truth-table standpoint, the clause is logically redundant.
+
+### Limitation of propositional logic (and of SPDX license expressions)
+
+The fundamental issue is that neither propositional logic nor the SPDX license expression syntax can express **which license applies to which part of the code**. In the `aws-lc-sys` example, the three `AND`-clauses implicitly refer to three disjoint subsets of the codebase, but this scoping information exists only in the commit history (or in accompanying documentation) — it is not, and cannot be, encoded in the expression itself.
+
+Propositional logic treats every variable as a context-free atom. It has no notion of "this variable pertains to *this* part of the codebase and that variable pertains to *that* part." As a result, any transformation that is valid in propositional logic — such as the absorption law — may discard distinctions that are meaningful in the licensing domain but invisible to the logic.
+
+This is equally a limitation of the SPDX compound expression format: `AND` and `OR` are overloaded to carry scoping information that the syntax has no way to make explicit. The SPDX specification itself [acknowledges](https://spdx.github.io/spdx-spec/v3.0.1/annexes/spdx-license-expressions/) that compound expressions describe the licensing of a **package as a whole**, not the internal mapping from files to licenses.
