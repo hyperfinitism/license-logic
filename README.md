@@ -8,11 +8,11 @@
 
 It parses [SPDX-style](https://spdx.github.io/spdx-spec/v3.0.1/annexes/spdx-license-expressions/) compound license expressions (`AND`, `OR`, `WITH` and non-standard `NOT`) into a formula AST and provides:
 
-- **Normal-form conversion** — exact CNF and DNF (by distributivity, not Tseitin)
+- **Normal-form conversion** — exact CNF and DNF
 - **Equivalence checking** — are two expressions logically equivalent?
 - **Implication checking** — does one expression logically imply another?
 
-These operations are powered by a SAT solver ([PySAT](https://pysathq.github.io/)) via Tseitin encoding. In effect, `license-logic` also works as a **CLI wrapper around PySAT** — you feed it readable Boolean expressions instead of raw DIMACS clauses, and it handles tokenisation, parsing, Tseitin encoding, and solver invocation behind the scenes.
+Equivalence and implication are verified with a SAT solver ([PySAT](https://pysathq.github.io/)) via Tseitin encoding. In effect, `license-logic` also works as a **CLI wrapper around PySAT** — you feed it readable Boolean expressions instead of raw DIMACS clauses, and it handles tokenisation, parsing, Tseitin encoding, and solver invocation behind the scenes.
 
 ## Installation
 
