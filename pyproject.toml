@@ -15,8 +15,7 @@ license-logic = "license_logic.cli:main"
 requires = ["hatchling>=1.29"]
 build-backend = "hatchling.build"
 
-# Development purposes only
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
   "pytest>=9.0.2",
   "ruff>=0.15.5",

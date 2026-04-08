@@ -3,13 +3,11 @@ name: SPDX License Check
 on:
   pull_request:
     paths:
-      - "pyproject.toml"
       - "src/**"
       - "tests/**"
       - ".github/workflows/spdx.yml"
   push:
     paths:
-      - "pyproject.toml"
       - "src/**"
       - "tests/**"
       - ".github/workflows/spdx.yml"
